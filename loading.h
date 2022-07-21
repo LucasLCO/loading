@@ -4,12 +4,12 @@
 #include <time.h>
 
 #define RAD 5
-#define AREA 40
 
-#define BACKGROUND_WHITE (BACKGROUND_RED|BACKGROUND_GREEN|BACKGROUND_BLUE)
-#define idx(c,r,wi) (c + wi * r)
 #define CX (WIDTH/2)
 #define CY (HEIGHT/4)
+#define BACKGROUND_WHITE (BACKGROUND_RED|BACKGROUND_GREEN|BACKGROUND_BLUE)
+#define AREA (RAD * 8)// 8 = all the possible spaces around one pixel.
+#define idx(c,r,wi) (c + wi * r)//equasion to transform a simple array into a multi-dimensional array.
 
 int distance(int x, int y, const int WIDTH, const int HEIGHT,int cx, int cy);
 void circunference(CHAR_INFO consoleBuffer[], const int WIDTH, const int HEIGHT, int radius);
@@ -68,9 +68,11 @@ void loading(void){
 		int arr[AREA] = {6,5,4,3,2,1,0,8,7,12,11,15,17,19,21,23,25,26,29,30,33,34,35,36,37,38,39,31,32,27,28,24,22,20,18,16,14,13,10,9};
 		for(int i = 0; i < AREA; i++){
 			pixel(consoleBuffer, WIDTH, dots[arr[i]].posx, dots[arr[i]].posy, 0);
-			if(i+1 < AREA)
-				pixel(consoleBuffer, WIDTH, dots[arr[i+1]].posx, dots[arr[i+1]].posy, 0);
-			WriteConsoleOutputA(wHnd, consoleBuffer, charBufSize, characterPos, &writeArea);
+            if(i-1 >= 0)
+				pixel(consoleBuffer, WIDTH, dots[arr[i-1]].posx, dots[arr[i-1]].posy, BACKGROUND_INTENSITY);
+			if (i == 0)
+                pixel(consoleBuffer, WIDTH, dots[arr[AREA-1]].posx, dots[arr[AREA-1]].posy, BACKGROUND_INTENSITY);
+            WriteConsoleOutputA(wHnd, consoleBuffer, charBufSize, characterPos, &writeArea);
 			if(i >= 5 && i <= 17)
 				Sleep(10 * i);
 			else if(i >= 18 && i <= 22)
@@ -79,10 +81,12 @@ void loading(void){
 				Sleep(35);
 			else
 				Sleep(10);
-			pixel(consoleBuffer, WIDTH, dots[arr[i]].posx, dots[arr[i]].posy, BACKGROUND_WHITE);
-			if(i+1 < AREA)
-				pixel(consoleBuffer, WIDTH, dots[arr[i+1]].posx, dots[arr[i+1]].posy, BACKGROUND_WHITE);
-			WriteConsoleOutputA(wHnd, consoleBuffer, charBufSize, characterPos, &writeArea);
+			pixel(consoleBuffer, WIDTH, dots[arr[i]].posx, dots[arr[i]].posy, BACKGROUND_INTENSITY);
+			if(i-1 >= 0)
+				pixel(consoleBuffer, WIDTH, dots[arr[i-1]].posx, dots[arr[i-1]].posy, BACKGROUND_WHITE);
+            if (i == 0)
+                pixel(consoleBuffer, WIDTH, dots[arr[AREA-1]].posx, dots[arr[AREA-1]].posy, BACKGROUND_WHITE);
+            WriteConsoleOutputA(wHnd, consoleBuffer, charBufSize, characterPos, &writeArea);
 		}
 		Sleep(5);
 	}
