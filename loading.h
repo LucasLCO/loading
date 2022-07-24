@@ -5,39 +5,67 @@
 
 #define RAD 5
 
-#define CX (WIDTH/2)
-#define CY (HEIGHT/4)
+#define CX (canvas.WIDTH/2)
+#define CY (canvas.HEIGHT/4)
 #define BACKGROUND_WHITE (BACKGROUND_RED|BACKGROUND_GREEN|BACKGROUND_BLUE)
 #define AREA (RAD * 8)// 8 = all the possible spaces around one pixel.
-#define idx(c,r,wi) (c + wi * r)//equasion to transform a simple array into a multi-dimensional array.
+#define idx(c,r) (c + canvas.WIDTH * r)//equation to transform a simple array into a multi-dimensional array.
 
-int distance(int x, int y, const int WIDTH, const int HEIGHT,int cx, int cy);
-void circunference(CHAR_INFO consoleBuffer[], const int WIDTH, const int HEIGHT, int radius);
-void pixel(CHAR_INFO consoleBuffer[],const int WIDTH,int x, int y,int color);
+void circunference(int radius, CHAR_INFO consoleBuffer[]);
+void pixel(int x, int y,int color, CHAR_INFO consoleBuffer[]);
+void setbcolor(int color, CHAR_INFO consoleBuffer[]);
+void line(int x1, int x2, int y1, int y2, CHAR_INFO consoleBuffer[]);
+int distanceL(int x, int y,int x1, int x2, int y1, int y2);
+int distanceC(int x, int y,int cx, int cy);
 void loading(void);
 
 struct dot{
 	int posx;
 	int posy;
-}dots[AREA];
+}dot[2];
 
-int distance(int x, int y, const int WIDTH, const int HEIGHT, int cx, int cy){
+struct canvas{
+	int HEIGHT;
+	int WIDTH;
+}canvas;
+
+void setbcolor(int color, CHAR_INFO consoleBuffer[]){
+	for(int clear = 0; clear < canvas.HEIGHT * canvas.WIDTH; clear++)
+		consoleBuffer[clear] = (CHAR_INFO) {.Char.AsciiChar = ' ', .Attributes = color};
+}
+
+int distanceC(int x, int y, int cx, int cy){
 	return (sqrt((pow(x - cx, 2)) + pow(y - cy, 2)));
 }
 
-void pixel(CHAR_INFO consoleBuffer[], const int WIDTH, int x, int y, int color){
-	consoleBuffer[idx(x,y,WIDTH)] = (CHAR_INFO) {.Char.AsciiChar = ' ', .Attributes = color};
+int distanceL(int x, int y,int x1, int x2, int y1, int y2){
+	return ((y1-y2)*x + (x2 - x1)*y + x1*y2 - x2*y1);
 }
 
-void circunference(CHAR_INFO consoleBuffer[], const int WIDTH, const int HEIGHT, int radius){
-	int i = 0;
-	for(int width_step = 0; width_step < WIDTH; width_step++){
-		for(int height_step = 0; height_step < HEIGHT; height_step++){
-			if(distance(width_step, height_step, WIDTH, HEIGHT,CX,CY) == radius){
-				pixel(consoleBuffer, WIDTH, width_step, height_step, BACKGROUND_WHITE);
-				dots[i].posx = width_step;
-				dots[i].posy = height_step;
-				i++;
+void pixel(int x, int y, int color, CHAR_INFO consoleBuffer[]){
+	consoleBuffer[idx(x,y)] = (CHAR_INFO) {.Char.AsciiChar = ' ', .Attributes = color};
+}
+
+void line(int x1, int y1, int x2, int y2, CHAR_INFO consoleBuffer[]){
+	for(int width_step = (x1 > x2 ? x2 : x1); width_step <= (x1 > x2 ? x1 : x2); width_step++){
+		for(int height_step = (y1 > y2 ? y2 : y1); height_step <= (y1 > y2 ? y1 : y2); height_step++){
+			if(distanceL(width_step,height_step,x1,x2,y1,y2) == 0)
+				pixel(width_step, height_step, BACKGROUND_GREEN, consoleBuffer);
+		}
+	}
+	pixel(x1, y1, BACKGROUND_BLUE,consoleBuffer);
+	pixel(x2, y2, BACKGROUND_RED,consoleBuffer);
+}
+
+void circunference(int radius, CHAR_INFO consoleBuffer[]){
+	for(int width_step = 0; width_step < canvas.WIDTH; width_step++){
+		for(int height_step = 0; height_step < canvas.HEIGHT; height_step++){
+			if(distanceC(width_step, height_step,CX,CY) == radius){
+				pixel(width_step, height_step, BACKGROUND_WHITE, consoleBuffer);
+				if(width_step == CX && height_step == CY + radius){
+					dot[0].posx = width_step;
+					dot[0].posy = height_step;
+				}
 			}
 		}
 	}
@@ -58,36 +86,28 @@ void loading(void){
 	SMALL_RECT writeArea = {0, 0, WIDTH - 1, HEIGHT - 1};
 	COORD bufferSize = {WIDTH, HEIGHT};
 	SetConsoleTitle(TEXT("LOADING..."));
-	
-	for(int clear = 0; clear < HEIGHT * WIDTH; clear++)
-		consoleBuffer[clear] = (CHAR_INFO) {.Char.AsciiChar = ' ', .Attributes = 0};
-	
-	circunference(consoleBuffer, WIDTH, HEIGHT, RAD);
-	
+	canvas.HEIGHT = HEIGHT;
+	canvas.WIDTH = WIDTH;
+
+	setbcolor(0,consoleBuffer);
+	circunference(RAD,consoleBuffer); 
+	int px = dot[0].posx, py = dot[0].posy;
+	int ox = CX, oy = CY;
+	int c,s,dx,dy;
+	float angleR;
 	for(;;){
-		int arr[AREA] = {6,5,4,3,2,1,0,8,7,12,11,15,17,19,21,23,25,26,29,30,33,34,35,36,37,38,39,31,32,27,28,24,22,20,18,16,14,13,10,9};
-		for(int i = 0; i < AREA; i++){
-			pixel(consoleBuffer, WIDTH, dots[arr[i]].posx, dots[arr[i]].posy, 0);
-            if(i-1 >= 0)
-				pixel(consoleBuffer, WIDTH, dots[arr[i-1]].posx, dots[arr[i-1]].posy, BACKGROUND_INTENSITY);
-			if (i == 0)
-                pixel(consoleBuffer, WIDTH, dots[arr[AREA-1]].posx, dots[arr[AREA-1]].posy, BACKGROUND_INTENSITY);
-            WriteConsoleOutputA(wHnd, consoleBuffer, charBufSize, characterPos, &writeArea);
-			if(i >= 5 && i <= 17)
-				Sleep(10 * i);
-			else if(i >= 18 && i <= 22)
-				Sleep(75);
-			else if(i >=23 && i <= 26)
-				Sleep(35);
-			else
-				Sleep(10);
-			pixel(consoleBuffer, WIDTH, dots[arr[i]].posx, dots[arr[i]].posy, BACKGROUND_INTENSITY);
-			if(i-1 >= 0)
-				pixel(consoleBuffer, WIDTH, dots[arr[i-1]].posx, dots[arr[i-1]].posy, BACKGROUND_WHITE);
-            if (i == 0)
-                pixel(consoleBuffer, WIDTH, dots[arr[AREA-1]].posx, dots[arr[AREA-1]].posy, BACKGROUND_WHITE);
-            WriteConsoleOutputA(wHnd, consoleBuffer, charBufSize, characterPos, &writeArea);
+		for(int angleD = 0; angleD < 360; angleD++){
+			angleR = (angleD * (M_PI/180));
+			c = cos(angleR);
+			s = sin(angleR);
+			dx = ceill((cos(angleR) * (px-ox)) - (sin(angleR) * (py-oy)) + ox + 0.5);
+			dy = ceill((sin(angleR) * (px-ox)) + (cos(angleR) * (py-oy)) + oy + 0.5);
+			pixel(dx,dy,BACKGROUND_GREEN,consoleBuffer);
+			WriteConsoleOutputA(wHnd, consoleBuffer, charBufSize, characterPos, &writeArea);
+			Sleep(5);
+			setbcolor(0,consoleBuffer);
+			circunference(RAD,consoleBuffer);
 		}
-		Sleep(5);
 	}
+	system("cls");
 }
